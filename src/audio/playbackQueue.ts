@@ -2,6 +2,7 @@ export class PlaybackQueue {
   private readonly audio: HTMLAudioElement;
   private readonly urls: string[] = [];
   private stopped = false;
+  private progressTimer: number | null = null;
 
   constructor(volume: number) {
     this.audio = new Audio();
@@ -19,6 +20,18 @@ export class PlaybackQueue {
     const url = URL.createObjectURL(blob);
     this.urls.push(url);
     await this.playUrl(url);
+  }
+
+  async playBlobWithProgress(
+    blob: Blob,
+    onProgress: (currentTimeSec: number, durationSec: number) => void
+  ): Promise<void> {
+    if (this.stopped) {
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    this.urls.push(url);
+    await this.playUrl(url, onProgress);
   }
 
   pause(): void {
@@ -40,6 +53,7 @@ export class PlaybackQueue {
 
   stop(): void {
     this.stopped = true;
+    this.clearProgressTimer();
     this.audio.pause();
     this.audio.src = "";
     for (const url of this.urls) {
@@ -48,7 +62,17 @@ export class PlaybackQueue {
     this.urls.length = 0;
   }
 
-  private playUrl(url: string): Promise<void> {
+  private clearProgressTimer(): void {
+    if (this.progressTimer !== null) {
+      window.clearInterval(this.progressTimer);
+      this.progressTimer = null;
+    }
+  }
+
+  private playUrl(
+    url: string,
+    onProgress?: (currentTimeSec: number, durationSec: number) => void
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.stopped) {
         resolve();
@@ -56,10 +80,12 @@ export class PlaybackQueue {
       }
 
       const onEnded = () => {
+        this.clearProgressTimer();
         cleanup();
         resolve();
       };
       const onError = () => {
+        this.clearProgressTimer();
         cleanup();
         reject(new Error("Audio playback failed"));
       };
@@ -71,7 +97,18 @@ export class PlaybackQueue {
       this.audio.addEventListener("ended", onEnded);
       this.audio.addEventListener("error", onError);
       this.audio.src = url;
+
+      this.clearProgressTimer();
+      if (onProgress) {
+        this.progressTimer = window.setInterval(() => {
+          if (this.stopped) return;
+          const duration = Number.isFinite(this.audio.duration) ? this.audio.duration : 0;
+          onProgress(this.audio.currentTime || 0, duration || 0);
+        }, 80);
+      }
+
       void this.audio.play().catch((error) => {
+        this.clearProgressTimer();
         cleanup();
         reject(error);
       });
