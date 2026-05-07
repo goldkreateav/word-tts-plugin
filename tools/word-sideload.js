@@ -3,6 +3,26 @@ const path = require("path");
 const { spawnSync } = require("child_process");
 const AdmZip = require("adm-zip");
 
+function getLogPath() {
+  const dir = process.env.TEMP || process.cwd();
+  return path.join(dir, "WordTTS-Install.log");
+}
+
+function logLine(msg) {
+  const line = `[${new Date().toISOString()}] ${msg}\n`;
+  try {
+    fs.appendFileSync(getLogPath(), line, "utf8");
+  } catch {
+    // ignore
+  }
+  try {
+    // eslint-disable-next-line no-console
+    console.log(msg);
+  } catch {
+    // ignore
+  }
+}
+
 function findManifestPath() {
   // Prefer manifest next to the packaged exe (simple distribution).
   // Fallback to repo root when running via node.
@@ -79,11 +99,47 @@ function generateSideloadDocx(addinId, addinVersion) {
 
 function launchFile(filePath) {
   if (process.platform !== "win32") return;
-  // Open with default associated app (Word for .docx).
   spawnSync("cmd.exe", ["/c", "start", "", `"${filePath}"`], {
-    stdio: "ignore",
+    stdio: "inherit",
     windowsHide: false
   });
+}
+
+function queryRegDefaultValue(key, view) {
+  const args = ["query", key, "/ve"];
+  if (view) args.push(`/reg:${view}`);
+  const res = spawnSync("reg.exe", args, { encoding: "utf8", windowsHide: true });
+  if (res.status !== 0) return undefined;
+  const out = (res.stdout || "") + (res.stderr || "");
+  // Example line: (Default)    REG_SZ    C:\Path\WINWORD.EXE
+  const m = out.match(/REG_SZ\s+([^\r\n]+)/i);
+  return m ? m[1].trim() : undefined;
+}
+
+function getWinwordExePath() {
+  const key = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\WINWORD.EXE";
+  return (
+    queryRegDefaultValue(key, 64) ||
+    queryRegDefaultValue(key, 32) ||
+    queryRegDefaultValue(key)
+  );
+}
+
+function launchWordWithDocx(docxPath) {
+  const winword = getWinwordExePath();
+  if (winword && fs.existsSync(winword)) {
+    logLine(`Found WINWORD.EXE at: ${winword}`);
+    // Use start to detach; call WinWord directly for reliability.
+    spawnSync("cmd.exe", ["/c", "start", "", `"${winword}"`, `"${docxPath}"`], {
+      stdio: "inherit",
+      windowsHide: false
+    });
+    return true;
+  }
+
+  logLine("WINWORD.EXE not found in registry; falling back to opening the .docx via file association.");
+  launchFile(docxPath);
+  return false;
 }
 
 function regAddValue(key, name, type, data) {
@@ -146,19 +202,25 @@ function pauseIfPackaged() {
   // pkg sets process.pkg at runtime.
   if (!process.pkg) return;
   try {
-    // eslint-disable-next-line no-sync
-    fs.writeSync(1, "\nPress Enter to close...\n");
-    // eslint-disable-next-line no-sync
-    fs.readFileSync(0);
+    spawnSync("cmd.exe", ["/c", "pause"], { stdio: "inherit", windowsHide: false });
   } catch {
     // ignore
   }
 }
 
 function main() {
+  try {
+    fs.writeFileSync(getLogPath(), "", "utf8");
+  } catch {
+    // ignore
+  }
+
+  logLine("WordTTS installer started.");
+  logLine(`Executable: ${process.execPath}`);
+
   const manifestPath = findManifestPath();
   if (!fs.existsSync(manifestPath)) {
-    console.error(`manifest.xml not found at: ${manifestPath}`);
+    logLine(`manifest.xml not found at: ${manifestPath}`);
     pauseIfPackaged();
     process.exit(1);
   }
@@ -167,25 +229,30 @@ function main() {
     const resolvedManifest = path.resolve(manifestPath);
     const addinId = readAddinIdFromManifestXml(resolvedManifest);
     const addinVersion = readAddinVersionFromManifestXml(resolvedManifest);
+    logLine(`Manifest: ${resolvedManifest}`);
+    logLine(`Add-in ID: ${addinId}`);
+    logLine(`Add-in Version: ${addinVersion}`);
 
     if (process.argv.includes("--uninstall")) {
       const devKey = "HKCU\\SOFTWARE\\Microsoft\\Office\\16.0\\Wef\\Developer";
       deleteInBothRegistryViews(devKey, addinId);
       addInBothRegistryViews(devKey, "RefreshAddins", "REG_DWORD", "1");
-      console.log("Add-in unregistered. Restart Word if it is already open.");
+      logLine("Add-in unregistered. Restart Word if it is already open.");
       pauseIfPackaged();
       process.exit(0);
     }
 
     registerAddinForOfficeDev(resolvedManifest);
     const sideloadDocx = generateSideloadDocx(addinId, addinVersion);
-    console.log(`Launching Word via ${sideloadDocx}`);
-    launchFile(sideloadDocx);
-    console.log("Add-in registered. If Word was already open, close all Word windows and reopen the document.");
+    logLine(`Sideload document created at: ${sideloadDocx}`);
+    logLine("Launching Word with sideload document...");
+    launchWordWithDocx(sideloadDocx);
+    logLine("Done. If nothing opened, check the log file in %TEMP%: WordTTS-Install.log");
     pauseIfPackaged();
     process.exit(0);
   } catch (e) {
-    console.error(e && e.message ? e.message : String(e));
+    logLine(e && e.message ? e.message : String(e));
+    logLine("Installer failed. Check the log file in %TEMP%: WordTTS-Install.log");
     pauseIfPackaged();
     process.exit(1);
   }
