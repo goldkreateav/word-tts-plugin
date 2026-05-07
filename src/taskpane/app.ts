@@ -482,7 +482,8 @@ class TaskpaneApp {
           res.items[lastOcc].font.highlightColor = "";
         }
       }
-      cc.delete(false);
+      // Keep the user's text; remove only the content control wrapper.
+      cc.delete(true);
       await context.sync();
     });
   }
