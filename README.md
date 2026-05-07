@@ -25,7 +25,8 @@ Word Office Add-in that reads selected text using an external TTS API.
 Build a small installer exe that registers the add-in for desktop Word via the Office developer registry key:
 
 - Build: `npm run x`
-- Run: `release/WordTTS-Install.exe`
+- Download bundle (recommended): `release/WordTTS-Install.zip`
+- Run: extract the zip, then run `WordTTS-Install.exe`
 
 To remove the registration:
 

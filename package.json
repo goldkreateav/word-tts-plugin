@@ -10,7 +10,7 @@
     "certs:install": "office-addin-dev-certs install",
     "lint": "eslint . --ext .ts",
     "x": "npm run x:build",
-    "x:build": "pkg -t node18-win-x64 -o release/WordTTS-Install.exe tools/word-sideload.js && node tools/copy-manifest-next-to-exe.js",
+    "x:build": "pkg -t node18-win-x64 -o release/WordTTS-Install.exe tools/word-sideload.js && node tools/copy-manifest-next-to-exe.js && node tools/make-installer-zip.js",
     "x:run": "node tools/word-sideload.js",
     "x:uninstall": "node tools/word-sideload.js --uninstall"
   },

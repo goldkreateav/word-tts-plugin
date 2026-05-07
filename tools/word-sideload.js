@@ -68,7 +68,10 @@ function makeUniquePath(p) {
 function generateSideloadDocx(addinId, addinVersion) {
   const templatePath = findTemplateDocxPath();
   if (!fs.existsSync(templatePath)) {
-    throw new Error(`Template docx not found at: ${templatePath}`);
+    throw new Error(
+      `Template docx not found at: ${templatePath}\n` +
+        "If you downloaded only the .exe, download WordTTS-Install.zip instead, extract it, then run the .exe."
+    );
   }
 
   const outPath = makeUniquePath(path.join(process.env.TEMP || ".", `Word add-in ${addinId}.docx`));
