@@ -11,6 +11,10 @@ function main() {
   ensureDir(releaseDir);
 
   fs.copyFileSync(path.join(root, "manifest.xml"), path.join(releaseDir, "manifest.xml"));
+  fs.copyFileSync(
+    path.join(root, "tools", "templates", "WordDocumentWithTaskPane.docx"),
+    path.join(releaseDir, "WordDocumentWithTaskPane.docx")
+  );
 }
 
 main();

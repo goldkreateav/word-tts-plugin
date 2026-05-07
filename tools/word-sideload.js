@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { spawnSync } = require("child_process");
+const AdmZip = require("adm-zip");
 
 function findManifestPath() {
   // Prefer manifest next to the packaged exe (simple distribution).
@@ -17,6 +18,72 @@ function readAddinIdFromManifestXml(manifestPath) {
   const m = xml.match(/<Id>([^<]+)<\/Id>/i);
   if (!m) throw new Error("Cannot find <Id> in manifest.xml");
   return m[1].trim();
+}
+
+function readAddinVersionFromManifestXml(manifestPath) {
+  const xml = fs.readFileSync(manifestPath, "utf8");
+  const m = xml.match(/<Version>([^<]+)<\/Version>/i);
+  if (!m) throw new Error("Cannot find <Version> in manifest.xml");
+  return m[1].trim();
+}
+
+function findTemplateDocxPath() {
+  const exeDir = path.dirname(process.execPath);
+  const nextToExe = path.join(exeDir, "WordDocumentWithTaskPane.docx");
+  if (fs.existsSync(nextToExe)) return nextToExe;
+
+  return path.resolve(__dirname, "templates", "WordDocumentWithTaskPane.docx");
+}
+
+function makeUniquePath(p) {
+  if (!fs.existsSync(p)) return p;
+  const parsed = path.parse(p);
+  for (let i = 2; i < 1000; i++) {
+    const candidate = path.join(parsed.dir, `${parsed.name}.${i}${parsed.ext}`);
+    if (!fs.existsSync(candidate)) return candidate;
+  }
+  return path.join(parsed.dir, `${parsed.name}.${Date.now()}${parsed.ext}`);
+}
+
+function generateSideloadDocx(addinId, addinVersion) {
+  const templatePath = findTemplateDocxPath();
+  if (!fs.existsSync(templatePath)) {
+    throw new Error(`Template docx not found at: ${templatePath}`);
+  }
+
+  const outPath = makeUniquePath(path.join(process.env.TEMP || ".", `Word add-in ${addinId}.docx`));
+
+  const templateZip = new AdmZip(templatePath);
+  const outZip = new AdmZip();
+
+  const webExtPath = "word/webextensions/webextension.xml";
+  const entry = templateZip.getEntry(webExtPath);
+  if (!entry) throw new Error("webextension.xml was not found in the template docx.");
+
+  const patchedXml = templateZip
+    .readAsText(entry)
+    .replace(/00000000-0000-0000-0000-000000000000/g, addinId)
+    .replace(/1\.0\.0\.0/g, addinVersion);
+
+  for (const e of templateZip.getEntries()) {
+    let data = e.getData();
+    if (e.entryName === webExtPath) {
+      data = Buffer.from(patchedXml, "utf8");
+    }
+    outZip.addFile(e.entryName, data, e.comment, e.attr);
+  }
+
+  outZip.writeZip(outPath);
+  return outPath;
+}
+
+function launchFile(filePath) {
+  if (process.platform !== "win32") return;
+  // Open with default associated app (Word for .docx).
+  spawnSync("cmd.exe", ["/c", "start", "", `"${filePath}"`], {
+    stdio: "ignore",
+    windowsHide: false
+  });
 }
 
 function regAddValue(key, name, type, data) {
@@ -99,6 +166,7 @@ function main() {
   try {
     const resolvedManifest = path.resolve(manifestPath);
     const addinId = readAddinIdFromManifestXml(resolvedManifest);
+    const addinVersion = readAddinVersionFromManifestXml(resolvedManifest);
 
     if (process.argv.includes("--uninstall")) {
       const devKey = "HKCU\\SOFTWARE\\Microsoft\\Office\\16.0\\Wef\\Developer";
@@ -110,7 +178,10 @@ function main() {
     }
 
     registerAddinForOfficeDev(resolvedManifest);
-    console.log("Add-in registered for Word (developer sideload). Restart Word if it is already open.");
+    const sideloadDocx = generateSideloadDocx(addinId, addinVersion);
+    console.log(`Launching Word via ${sideloadDocx}`);
+    launchFile(sideloadDocx);
+    console.log("Add-in registered. If Word was already open, close all Word windows and reopen the document.");
     pauseIfPackaged();
     process.exit(0);
   } catch (e) {

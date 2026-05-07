@@ -21,6 +21,7 @@
   "devDependencies": {
     "@types/office-js": "^1.0.401",
     "@types/webpack-env": "^1.18.8",
+    "adm-zip": "^0.5.17",
     "copy-webpack-plugin": "^13.0.0",
     "css-loader": "^7.1.2",
     "eslint": "^9.26.0",
