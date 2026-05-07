@@ -1,58 +1,58 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Word TTS Reader</title>
+    <title>Озвучивание текста</title>
   </head>
   <body>
     <div class="container">
-      <h1>Word TTS Reader</h1>
+      <h1>Озвучивание текста</h1>
 
       <div class="actions">
-        <button id="startBtn">Read selection</button>
-        <button id="pauseBtn" disabled>Pause</button>
-        <button id="resumeBtn" disabled>Resume</button>
-        <button id="stopBtn" disabled>Stop</button>
+        <button id="startBtn" class="btn btnPrimary">Озвучить выделение</button>
+        <button id="pauseBtn" class="btn" disabled>Пауза</button>
+        <button id="resumeBtn" class="btn" disabled>Продолжить</button>
+        <button id="stopBtn" class="btn btnDanger" disabled>Стоп</button>
       </div>
 
       <details class="panel" id="settingsPanel">
-        <summary class="panelSummary">Settings</summary>
+        <summary class="panelSummary">Настройки</summary>
         <label>
-          TTS API URL
+          URL TTS API (база `/v1/`)
           <input id="apiUrl" type="url" placeholder="http://localhost:8000/v1/" />
         </label>
         <label>
-          API key (optional)
-          <input id="apiKey" type="password" placeholder="Bearer token value" />
+          API ключ (необязательно)
+          <input id="apiKey" type="password" placeholder="Bearer token" />
         </label>
         <label>
-          Voice
+          Голос
           <select id="voice"></select>
         </label>
         <label>
-          Speed (0.5-2.0)
+          Скорость (0.5–2.0)
           <input id="rate" type="number" min="0.5" max="2" step="0.1" />
         </label>
         <label>
-          Pause between chunks (ms)
+          Пауза между фрагментами (мс)
           <input id="pauseMs" type="number" min="0" max="2000" step="10" />
         </label>
         <label>
-          Volume (0-1)
+          Громкость (0–1)
           <input id="volume" type="number" min="0" max="1" step="0.05" />
         </label>
         <label>
-          Max chunk length
+          Максимальная длина фрагмента
           <input id="maxChunkLength" type="number" min="80" max="1200" step="10" />
         </label>
         <label>
-          Audio format
-          <input id="audioFormat" type="text" placeholder="mp3" />
+          Формат аудио
+          <input id="audioFormat" type="text" placeholder="mp3 / wav / ogg" />
         </label>
       </details>
 
-      <p id="status" class="status">Ready.</p>
+      <p id="status" class="status">Готово.</p>
       <p id="progress" class="progress"></p>
     </div>
 

@@ -8,9 +8,9 @@
   <Id>5e14574c-f168-42be-a364-5ea1a53a89bf</Id>
   <Version>1.0.0.0</Version>
   <ProviderName>Word TTS Plugin</ProviderName>
-  <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Word TTS Reader" />
-  <Description DefaultValue="Read selected text via external TTS API." />
+  <DefaultLocale>ru-RU</DefaultLocale>
+  <DisplayName DefaultValue="Озвучивание текста" />
+  <Description DefaultValue="Озвучивание выделенного текста через внешний TTS API." />
   <IconUrl DefaultValue="https://res.cdn.office.net/files/fabric-cdn-prod_20221201.001/assets/item-types/32/docx.png" />
   <HighResolutionIconUrl DefaultValue="https://res.cdn.office.net/files/fabric-cdn-prod_20221201.001/assets/item-types/64/docx.png" />
   <SupportUrl DefaultValue="https://example.com/support" />
@@ -78,13 +78,13 @@
         <bt:Url id="Taskpane.AutoStartUrl" DefaultValue="http://localhost:3000/taskpane.html?autostart=1" />
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="GetStarted.Title" DefaultValue="Word TTS Reader loaded" />
-        <bt:String id="Group.Label" DefaultValue="Word TTS" />
-        <bt:String id="OpenTaskpaneButton.Label" DefaultValue="Read selection" />
+        <bt:String id="GetStarted.Title" DefaultValue="Озвучивание текста загружено" />
+        <bt:String id="Group.Label" DefaultValue="Озвучивание" />
+        <bt:String id="OpenTaskpaneButton.Label" DefaultValue="Озвучить выделение" />
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="GetStarted.Description" DefaultValue="Use the taskpane to read selected text with external TTS API." />
-        <bt:String id="OpenTaskpaneButton.Tooltip" DefaultValue="Open TTS panel and start reading current selection." />
+        <bt:String id="GetStarted.Description" DefaultValue="Откройте панель, чтобы озвучить выделенный текст через внешний TTS API." />
+        <bt:String id="OpenTaskpaneButton.Tooltip" DefaultValue="Открыть панель и начать озвучивание текущего выделения." />
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

@@ -41,7 +41,7 @@ class TaskpaneApp {
     this.settings = await loadSettings(config);
     this.fillSettingsForm();
     this.bindEvents();
-    this.setStatus("Ready.");
+    this.setStatus("Готово.");
     await this.refreshVoices();
 
     const autoStart = new URLSearchParams(window.location.search).get("autostart");
@@ -189,7 +189,7 @@ class TaskpaneApp {
 
     await this.persistSettings();
     if (!this.settings.apiUrl) {
-      this.setStatus("Set TTS API URL before starting.");
+      this.setStatus("Укажите URL TTS API перед запуском.");
       return;
     }
 
@@ -201,10 +201,10 @@ class TaskpaneApp {
     this.playbackQueue = new PlaybackQueue(this.settings.volume);
 
     try {
-      this.setStatus("Reading Word selection...");
+      this.setStatus("Читаю выделенный текст в Word...");
       const selectedText = await getSelectedText();
       if (!selectedText) {
-        throw new Error("No text selected. Highlight text in Word and try again.");
+        throw new Error("Текст не выделен. Выделите фрагмент в Word и попробуйте ещё раз.");
       }
 
       const chunks = splitIntoChunks(
@@ -213,7 +213,7 @@ class TaskpaneApp {
         this.settings.pauseMs
       );
       if (!chunks.length) {
-        throw new Error("Unable to split selected text into chunks.");
+        throw new Error("Не удалось разбить текст на фрагменты.");
       }
 
       const config = await loadRuntimeConfig();
@@ -240,16 +240,16 @@ class TaskpaneApp {
           break;
         }
         prefetch(i + 2);
-        this.setStatus(`Synthesizing chunk ${i + 1}/${chunks.length}...`);
+        this.setStatus(`Синтез: фрагмент ${i + 1}/${chunks.length}...`);
         const blob = await inFlight.get(i)!;
         this.setProgress(i + 1, chunks.length);
-        this.setStatus(`Playing chunk ${i + 1}/${chunks.length}...`);
+        this.setStatus(`Воспроизведение: фрагмент ${i + 1}/${chunks.length}...`);
         await this.playbackQueue.playBlob(blob);
         await this.playbackQueue.wait(chunks[i].pauseAfterMs);
       }
 
       if (!this.activeController.signal.aborted) {
-        this.setStatus("Done.");
+        this.setStatus("Готово.");
       }
     } catch (error) {
       this.setStatus((error as Error).message);
@@ -264,7 +264,7 @@ class TaskpaneApp {
     }
     this.playbackQueue.pause();
     this.state = "paused";
-    this.setStatus("Paused.");
+    this.setStatus("Пауза.");
     this.setControlState();
   }
 
@@ -274,7 +274,7 @@ class TaskpaneApp {
     }
     this.playbackQueue.resume();
     this.state = "playing";
-    this.setStatus("Resumed.");
+    this.setStatus("Продолжение.");
     this.setControlState();
   }
 
@@ -292,7 +292,7 @@ class TaskpaneApp {
   }
 
   private setProgress(current: number, total: number): void {
-    this.ui.progress.textContent = `Progress: ${current}/${total}`;
+    this.ui.progress.textContent = `Прогресс: ${current}/${total}`;
   }
 
   private setControlState(): void {

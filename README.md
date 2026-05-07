@@ -1,16 +1,16 @@
-# Word TTS Reader (Office.js)
+# Озвучивание текста в Word (Office.js)
 
-Word Office Add-in that reads selected text using an external TTS API.
+Надстройка Word (Office.js), которая озвучивает выделенный текст через внешний TTS API.
 
-## Features
+## Возможности
 
-- Read current Word selection
-- Near real-time playback with text chunking + prefetch
-- Play, pause, resume, and stop controls
-- Settings: API URL, API key, voice, speed, pause, volume, chunk size, format
-- Runtime config file: `config/default.json`
+- Озвучивание выделения в Word
+- Почти “реалтайм”: разбиение текста на фрагменты + предзагрузка
+- Управление: озвучить, пауза, продолжить, стоп
+- Настройки: URL API, ключ, голос, скорость, пауза, громкость, размер фрагмента, формат
+- Рантайм-конфиг: `config/default.json`
 
-## Setup
+## Установка
 
 1. Install dependencies:
    - `npm install`
@@ -18,25 +18,25 @@ Word Office Add-in that reads selected text using an external TTS API.
    - `npm run build`
 3. Start local dev server:
    - `npm start`
-4. Sideload `manifest.xml` into Word (Microsoft 365 Add-ins / Shared Folder method).
+4. Подключите `manifest.xml` в Word (Microsoft 365 Add-ins / Shared Folder).
 
-## One-click Windows installer (EXE)
+## Установщик для Windows (EXE)
 
-Build a small installer exe that registers the add-in for desktop Word via the Office developer registry key:
+Сборка небольшого установщика, который регистрирует надстройку для настольного Word через developer registry key Office:
 
 - Build: `npm run x`
 - Download bundle (recommended): `release/WordTTS-Install.zip`
 - Run: extract the zip, then run `WordTTS-Install.exe`
 
-To remove the registration:
+Удаление регистрации:
 
 - `npm run x:uninstall`
 
-## TTS API contract
+## Контракт TTS API
 
-Set `settings.apiUrl` to the API base URL (recommended: ending with `/v1/`), for example `http://localhost:8000/v1/`.
+В `settings.apiUrl` укажите базовый URL API (рекомендуем заканчивать на `/v1/`), например `http://localhost:8000/v1/`.
 
-The add-in sends `POST` JSON to `settings.apiUrl + /synthesize`:
+Надстройка отправляет `POST` JSON на `settings.apiUrl + /synthesize`:
 
 ```json
 {
@@ -47,13 +47,13 @@ The add-in sends `POST` JSON to `settings.apiUrl + /synthesize`:
 }
 ```
 
-Accepted responses:
+Поддерживаемые ответы:
 
 - Binary audio (`audio/*`)
 - JSON with `audioBase64`
 - JSON with `audioUrl`
 
-## Notes
+## Примечания
 
-- Ribbon button opens taskpane in auto-start mode (`taskpane.html?autostart=1`).
-- If no text is selected, the add-in shows an error in status.
+- Кнопка на ленте открывает панель в режиме автостарта (`taskpane.html?autostart=1`).
+- Если текст не выделен, надстройка покажет ошибку в статусе.

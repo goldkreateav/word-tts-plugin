@@ -2,11 +2,28 @@
   box-sizing: border-box;
 }
 
+:root {
+  --corp-text: #292523;
+  --corp-surface: #ffffff;
+  --corp-muted: #606164;
+  --corp-bg: #e4e5e6;
+  --corp-border: #CACCCE;
+  --corp-accent: #f47c30;
+
+  /* Theme colors (brand palette in template) */
+  --theme-014637: #014637;
+  --theme-193c84: #193c84;
+  --theme-fff200: #fff200;
+  --theme-ffc805: #ffc805;
+  --theme-c9252c: #c9252c;
+  --theme-7c1c21: #7c1c21;
+}
+
 body {
   margin: 0;
   font-family: Segoe UI, Arial, sans-serif;
-  background: #f4f6f8;
-  color: #1f2328;
+  background: var(--corp-bg);
+  color: var(--corp-text);
 }
 
 .container {
@@ -27,14 +44,21 @@ h2 {
   display: flex;
   gap: 8px;
   margin-bottom: 12px;
+  flex-wrap: wrap;
 }
 
+.btn,
 button {
-  border: 1px solid #b7bfc8;
-  background: #ffffff;
+  border: 1px solid var(--corp-border);
+  background: var(--corp-surface);
   border-radius: 6px;
   padding: 8px 10px;
   cursor: pointer;
+  color: var(--corp-text);
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    transform 60ms ease;
 }
 
 button:disabled {
@@ -42,10 +66,29 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btnPrimary {
+  background: var(--corp-accent);
+  border-color: var(--corp-accent);
+  color: #ffffff;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  filter: brightness(0.98);
+}
+
+.btnDanger {
+  border-color: var(--theme-c9252c);
+  color: var(--theme-c9252c);
+}
+
 .panel {
-  border: 1px solid #d7dde3;
+  border: 1px solid var(--corp-border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--corp-surface);
   padding: 10px;
 }
 
@@ -59,6 +102,7 @@ button:disabled {
   font-weight: 600;
   cursor: pointer;
   list-style: none;
+  color: var(--corp-text);
 }
 
 .panelSummary::-webkit-details-marker {
@@ -69,19 +113,30 @@ label {
   display: grid;
   gap: 4px;
   font-size: 12px;
+  color: var(--corp-muted);
 }
 
 input,
 select {
-  border: 1px solid #c9d1d9;
+  border: 1px solid var(--corp-border);
   border-radius: 6px;
   padding: 7px 8px;
   font-size: 13px;
-  background: #fff;
+  background: var(--corp-surface);
+  color: var(--corp-text);
+}
+
+.btn:focus-visible,
+input:focus-visible,
+select:focus-visible,
+.panelSummary:focus-visible {
+  outline: 2px solid var(--corp-accent);
+  outline-offset: 2px;
 }
 
 .status,
 .progress {
   margin: 12px 0 0;
   font-size: 12px;
+  color: var(--corp-muted);
 }
