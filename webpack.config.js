@@ -65,7 +65,18 @@ module.exports = async () => {
       })
     ],
     devServer: {
-      static: path.join(__dirname, "dist"),
+      static: [
+        {
+          directory: path.join(__dirname, "dist"),
+          publicPath: "/"
+        },
+        // After `npm run x`, the installer will be available at:
+        // http://localhost:3000/download/WordTTS-Install.exe
+        {
+          directory: path.join(__dirname, "release"),
+          publicPath: "/download"
+        }
+      ],
       hot: false,
       liveReload: true,
       host: "0.0.0.0",

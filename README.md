@@ -20,6 +20,17 @@ Word Office Add-in that reads selected text using an external TTS API.
    - `npm start`
 4. Sideload `manifest.xml` into Word (Microsoft 365 Add-ins / Shared Folder method).
 
+## One-click Windows installer (EXE)
+
+Build a small installer exe that registers the add-in for desktop Word via the Office developer registry key:
+
+- Build: `npm run x`
+- Run: `release/WordTTS-Install.exe`
+
+To remove the registration:
+
+- `npm run x:uninstall`
+
 ## TTS API contract
 
 The add-in sends `POST` JSON to `settings.apiUrl`:
