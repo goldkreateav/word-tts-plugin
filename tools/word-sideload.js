@@ -168,6 +168,12 @@ function regDeleteValueInView(view, key, name) {
   return res.status === 0;
 }
 
+function regDeleteKeyInView(view, key) {
+  const args = ["delete", key, "/f", `/reg:${view}`];
+  const res = spawnSync("reg.exe", args, { stdio: "ignore", windowsHide: false });
+  return res.status === 0;
+}
+
 function regDeleteValue(key, name) {
   const args = ["delete", key, "/f", "/v", name];
   const res = spawnSync("reg.exe", args, { stdio: "ignore", windowsHide: false });
@@ -186,6 +192,12 @@ function deleteInBothRegistryViews(key, name) {
   return ok32 || ok64;
 }
 
+function deleteKeyInBothRegistryViews(key) {
+  const ok32 = regDeleteKeyInView(32, key);
+  const ok64 = regDeleteKeyInView(64, key);
+  return ok32 || ok64;
+}
+
 function registerAddinForOfficeDev(manifestPath) {
   if (process.platform !== "win32") {
     throw new Error("This installer currently supports Windows only.");
@@ -193,6 +205,11 @@ function registerAddinForOfficeDev(manifestPath) {
 
   const addinId = readAddinIdFromManifestXml(manifestPath);
   const devKey = "HKCU\\SOFTWARE\\Microsoft\\Office\\16.0\\Wef\\Developer";
+  const debugKey = `${devKey}\\${addinId}`;
+
+  // If debugging flags were enabled previously, Word may treat the add-in as "VS debug only".
+  // Remove the per-addin debug key to clear UseDirectDebugger/UseWebDebugger/OpenDevTools/etc.
+  deleteKeyInBothRegistryViews(debugKey);
 
   // If manifestPath was previously used as the value name, remove it (mirrors MS tool behavior).
   deleteInBothRegistryViews(devKey, manifestPath);
