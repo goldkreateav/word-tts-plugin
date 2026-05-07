@@ -103,11 +103,14 @@ class TaskpaneApp {
   }
 
   private readSettingsFromForm(): TtsSettings {
+    const clamp = (v: number, min: number, max: number): number =>
+      Math.min(max, Math.max(min, v));
+
     return {
       apiUrl: this.normalizeApiBaseUrl(this.ui.apiUrl.value),
       apiKey: this.ui.apiKey.value.trim(),
       voice: this.ui.voice.value.trim() || "default",
-      rate: Number(this.ui.rate.value) || 1,
+      rate: clamp(Number(this.ui.rate.value) || 1, 0.75, 1.5),
       pauseMs: Math.max(0, Number(this.ui.pauseMs.value) || 0),
       volume: Math.min(1, Math.max(0, Number(this.ui.volume.value) || 1)),
       maxChunkLength: Math.max(80, Number(this.ui.maxChunkLength.value) || 320),
