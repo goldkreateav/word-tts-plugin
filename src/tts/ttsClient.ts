@@ -1,4 +1,4 @@
-import { RuntimeConfig, TtsRequest, TtsSettings } from "../types";
+import { RuntimeConfig, TtsAlignment, TtsRequest, TtsSettings, TtsSynthesisResult } from "../types";
 
 const toError = (message: string, status?: number): Error => {
   const suffix = status ? ` (HTTP ${status})` : "";
@@ -46,17 +46,30 @@ export class TtsClient {
     return u;
   }
 
-  private synthesizeUrl(): string {
-    return new URL("./synthesize", this.baseUrl()).toString();
+  private synthesizeUrl(includeAlignment: boolean): string {
+    const u = new URL("./synthesize", this.baseUrl());
+    if (includeAlignment) {
+      u.searchParams.set("includeAlignment", "1");
+    }
+    return u.toString();
   }
 
   async synthesize(request: TtsRequest, signal?: AbortSignal): Promise<Blob> {
+    const res = await this.synthesizeWithAlignment(request, false, signal);
+    return res.audio;
+  }
+
+  async synthesizeWithAlignment(
+    request: TtsRequest,
+    includeAlignment: boolean,
+    signal?: AbortSignal
+  ): Promise<TtsSynthesisResult> {
     const retries = Math.max(0, this.config.MAX_RETRIES);
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt <= retries; attempt += 1) {
       try {
-        const response = await fetch(this.synthesizeUrl(), {
+        const response = await fetch(this.synthesizeUrl(includeAlignment), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -80,22 +93,29 @@ export class TtsClient {
 
         const contentType = response.headers.get("content-type") || "";
         if (contentType.includes("application/json")) {
-          const json = (await response.json()) as { audioBase64?: string; audioUrl?: string };
+          const json = (await response.json()) as {
+            audioBase64?: string;
+            audioUrl?: string;
+            alignment?: TtsAlignment;
+          };
           if (json.audioBase64) {
             const bytes = Uint8Array.from(atob(json.audioBase64), (ch) => ch.charCodeAt(0));
-            return new Blob([bytes], { type: `audio/${request.format}` });
+            return {
+              audio: new Blob([bytes], { type: `audio/${request.format}` }),
+              alignment: json.alignment
+            };
           }
           if (json.audioUrl) {
             const audioResp = await fetch(json.audioUrl, { signal });
             if (!audioResp.ok) {
               throw toError("Unable to fetch synthesized audio", audioResp.status);
             }
-            return await audioResp.blob();
+            return { audio: await audioResp.blob(), alignment: json.alignment };
           }
           throw new Error("JSON response does not contain audio data");
         }
 
-        return await response.blob();
+        return { audio: await response.blob() };
       } catch (error) {
         if (signal?.aborted) {
           throw new Error("Synthesis aborted");

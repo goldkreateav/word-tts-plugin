@@ -32,3 +32,18 @@ export interface TtsRequest {
   rate: number;
   format: string;
 }
+
+export interface AlignmentWord {
+  word: string;
+  startSec: number;
+  endSec: number;
+}
+
+export interface TtsAlignment {
+  words: AlignmentWord[];
+}
+
+export interface TtsSynthesisResult {
+  audio: Blob;
+  alignment?: TtsAlignment;
+}

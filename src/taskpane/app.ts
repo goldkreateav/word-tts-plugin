@@ -2,7 +2,7 @@ import { PlaybackQueue } from "../audio/playbackQueue";
 import { loadSettings, saveSettings } from "../settings/store";
 import { splitIntoChunks } from "../tts/chunker";
 import { TtsClient } from "../tts/ttsClient";
-import { RuntimeConfig, TtsRequest, TtsSettings } from "../types";
+import { AlignmentWord, RuntimeConfig, TtsRequest, TtsSettings, TtsSynthesisResult } from "../types";
 import { getSelectedText } from "../word/selectionReader";
 import { loadRuntimeConfig } from "./config";
 
@@ -41,6 +41,7 @@ class TaskpaneApp {
   private selectionWords: string[] = [];
   private selectionWordOccurrenceIndex: number[] = [];
   private lastHighlightedWordIndex: number | null = null;
+  private selectionWordSeen = new Map<string, number>();
 
   private highlightQueueRunning = false;
   private pendingHighlightWordIndex: number | null = null;
@@ -248,7 +249,7 @@ class TaskpaneApp {
 
       const config = await loadRuntimeConfig();
       const ttsClient = new TtsClient(config, this.settings);
-      const inFlight = new Map<number, Promise<Blob>>();
+      const inFlight = new Map<number, Promise<TtsSynthesisResult>>();
       const prefetch = (index: number): void => {
         if (index >= chunks.length || inFlight.has(index)) {
           return;
@@ -259,7 +260,7 @@ class TaskpaneApp {
           rate: this.settings.rate,
           format: this.settings.audioFormat
         };
-        inFlight.set(index, ttsClient.synthesize(req, this.activeController?.signal));
+        inFlight.set(index, ttsClient.synthesizeWithAlignment(req, true, this.activeController?.signal));
       };
 
       prefetch(0);
@@ -272,21 +273,52 @@ class TaskpaneApp {
         }
         prefetch(i + 2);
         this.setStatus(`Синтез: фрагмент ${i + 1}/${chunks.length}...`);
-        const blob = await inFlight.get(i)!;
+        const synth = await inFlight.get(i)!;
+        const blob = synth.audio;
         this.setProgress(i + 1, chunks.length);
         this.setStatus(`Воспроизведение: фрагмент ${i + 1}/${chunks.length}...`);
 
-        const chunkWords = this.tokenizeWords(chunks[i].text);
+        const alignmentWords: AlignmentWord[] =
+          synth.alignment?.words?.filter((w) => !!w?.word) ?? [];
+        const chunkWords = alignmentWords.length
+          ? alignmentWords.map((w) => w.word)
+          : this.tokenizeWords(chunks[i].text);
         const chunkWordCount = chunkWords.length;
+
+        this.appendSelectionWords(chunkWords);
+
         let lastLocalIndex = -1;
 
         await this.playbackQueue.playBlobWithProgress(blob, (currentTimeSec, durationSec) => {
           if (this.state !== "playing") return;
           if (chunkWordCount <= 0) return;
-          if (!Number.isFinite(durationSec) || durationSec <= 0) return;
+          if (!Number.isFinite(currentTimeSec) || currentTimeSec < 0) return;
 
-          const p = Math.min(0.999, Math.max(0, currentTimeSec / durationSec));
-          const localIndex = Math.min(chunkWordCount - 1, Math.floor(p * chunkWordCount));
+          let localIndex = 0;
+          if (alignmentWords.length) {
+            // Find the word whose [startSec, endSec) contains currentTimeSec.
+            // Fallback to last word if we're past the end.
+            let lo = 0;
+            let hi = alignmentWords.length - 1;
+            let found = alignmentWords.length - 1;
+            while (lo <= hi) {
+              const mid = (lo + hi) >> 1;
+              const w = alignmentWords[mid];
+              if (currentTimeSec < w.startSec) {
+                hi = mid - 1;
+              } else if (currentTimeSec >= w.endSec) {
+                lo = mid + 1;
+              } else {
+                found = mid;
+                break;
+              }
+            }
+            localIndex = Math.min(chunkWordCount - 1, Math.max(0, found));
+          } else {
+            if (!Number.isFinite(durationSec) || durationSec <= 0) return;
+            const p = Math.min(0.999, Math.max(0, currentTimeSec / durationSec));
+            localIndex = Math.min(chunkWordCount - 1, Math.floor(p * chunkWordCount));
+          }
           if (localIndex === lastLocalIndex) return;
           lastLocalIndex = localIndex;
 
@@ -493,19 +525,10 @@ class TaskpaneApp {
   }
 
   private async prepareSelectionHighlight(selectedText: string): Promise<void> {
-    const words = this.tokenizeWords(selectedText);
-    const occurrenceIndex: number[] = [];
-    const seen = new Map<string, number>();
-
-    for (const w of words) {
-      const key = w.toLocaleLowerCase();
-      const n = seen.get(key) ?? 0;
-      occurrenceIndex.push(n);
-      seen.set(key, n + 1);
-    }
-
-    this.selectionWords = words;
-    this.selectionWordOccurrenceIndex = occurrenceIndex;
+    // We'll append words as we synthesize chunks (prefer alignment words).
+    this.selectionWords = [];
+    this.selectionWordOccurrenceIndex = [];
+    this.selectionWordSeen = new Map<string, number>();
     this.lastHighlightedWordIndex = null;
 
     this.selectionContentControlId = await Word.run(async (context) => {
@@ -519,6 +542,18 @@ class TaskpaneApp {
       await context.sync();
       return cc.id;
     });
+  }
+
+  private appendSelectionWords(words: string[]): void {
+    for (const w of words) {
+      const word = (w || "").trim();
+      if (!word) continue;
+      const key = word.toLocaleLowerCase();
+      const n = this.selectionWordSeen.get(key) ?? 0;
+      this.selectionWords.push(word);
+      this.selectionWordOccurrenceIndex.push(n);
+      this.selectionWordSeen.set(key, n + 1);
+    }
   }
 
   private async clearSelectionHighlight(): Promise<void> {
