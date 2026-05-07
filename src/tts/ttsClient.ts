@@ -27,13 +27,36 @@ const withTimeout = (signal: AbortSignal | undefined, timeoutMs: number): AbortS
 export class TtsClient {
   constructor(private readonly config: RuntimeConfig, private readonly settings: TtsSettings) {}
 
+  private baseUrl(): URL {
+    const raw = (this.settings.apiUrl || "").trim();
+    const u = new URL(raw);
+
+    // Backward compatibility: previously users entered the full synthesize URL.
+    if (u.pathname.endsWith("/synthesize")) {
+      u.pathname = u.pathname.replace(/\/synthesize$/, "/");
+    }
+
+    // Ensure trailing slash so relative URL resolution works as expected.
+    if (!u.pathname.endsWith("/")) {
+      u.pathname += "/";
+    }
+
+    u.search = "";
+    u.hash = "";
+    return u;
+  }
+
+  private synthesizeUrl(): string {
+    return new URL("./synthesize", this.baseUrl()).toString();
+  }
+
   async synthesize(request: TtsRequest, signal?: AbortSignal): Promise<Blob> {
     const retries = Math.max(0, this.config.MAX_RETRIES);
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt <= retries; attempt += 1) {
       try {
-        const response = await fetch(this.settings.apiUrl, {
+        const response = await fetch(this.synthesizeUrl(), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

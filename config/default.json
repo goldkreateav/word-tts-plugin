@@ -1,5 +1,5 @@
 {
-  "TTS_API_BASE_URL": "https://example.com/api/tts",
+  "TTS_API_BASE_URL": "http://localhost:8000/v1/",
   "DEFAULT_VOICE": "default",
   "DEFAULT_RATE": 1,
   "AUDIO_FORMAT": "mp3",

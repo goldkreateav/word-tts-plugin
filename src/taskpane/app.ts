@@ -84,7 +84,7 @@ class TaskpaneApp {
 
   private readSettingsFromForm(): TtsSettings {
     return {
-      apiUrl: this.ui.apiUrl.value.trim(),
+      apiUrl: this.normalizeApiBaseUrl(this.ui.apiUrl.value),
       apiKey: this.ui.apiKey.value.trim(),
       voice: this.ui.voice.value.trim() || "default",
       rate: Number(this.ui.rate.value) || 1,
@@ -106,13 +106,35 @@ class TaskpaneApp {
     await this.refreshVoices();
   }
 
-  private voicesUrlFromApiUrl(apiUrl: string): string | null {
+  private normalizeApiBaseUrl(input: string): string {
+    const raw = (input || "").trim();
+    if (!raw) return "";
+
     try {
-      const u = new URL(apiUrl);
-      u.pathname = "/v1/voices";
+      const u = new URL(raw);
+
+      // Backward compatibility: previously users entered /v1/synthesize.
+      if (u.pathname.endsWith("/synthesize")) {
+        u.pathname = u.pathname.replace(/\/synthesize$/, "/");
+      }
+
+      // Prefer base URL ending in /v1/ (user might type /v1 without trailing slash).
+      if (!u.pathname.endsWith("/")) {
+        u.pathname += "/";
+      }
+
       u.search = "";
       u.hash = "";
       return u.toString();
+    } catch {
+      return raw;
+    }
+  }
+
+  private voicesUrlFromApiUrl(apiUrl: string): string | null {
+    try {
+      const base = new URL(this.normalizeApiBaseUrl(apiUrl));
+      return new URL("./voices", base).toString();
     } catch {
       return null;
     }

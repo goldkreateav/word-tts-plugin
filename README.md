@@ -34,7 +34,9 @@ To remove the registration:
 
 ## TTS API contract
 
-The add-in sends `POST` JSON to `settings.apiUrl`:
+Set `settings.apiUrl` to the API base URL (recommended: ending with `/v1/`), for example `http://localhost:8000/v1/`.
+
+The add-in sends `POST` JSON to `settings.apiUrl + /synthesize`:
 
 ```json
 {
