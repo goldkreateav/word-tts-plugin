@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<OfficeApp
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+  xsi:type="TaskPaneApp">
+  <Id>5e14574c-f168-42be-a364-5ea1a53a89bf</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>Word TTS Plugin</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Word TTS Reader" />
+  <Description DefaultValue="Read selected text via external TTS API." />
+  <IconUrl DefaultValue="https://res.cdn.office.net/files/fabric-cdn-prod_20221201.001/assets/item-types/32/docx.svg" />
+  <HighResolutionIconUrl DefaultValue="https://res.cdn.office.net/files/fabric-cdn-prod_20221201.001/assets/item-types/64/docx.svg" />
+  <SupportUrl DefaultValue="https://example.com/support" />
+  <AppDomains>
+    <AppDomain>https://localhost:3000</AppDomain>
+  </AppDomains>
+  <Hosts>
+    <Host Name="Document" />
+  </Hosts>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://localhost:3000/taskpane.html" />
+  </DefaultSettings>
+  <Permissions>ReadDocument</Permissions>
+
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Hosts>
+      <Host xsi:type="Document">
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title" />
+            <Description resid="GetStarted.Description" />
+            <LearnMoreUrl resid="GetStarted.LearnMoreUrl" />
+          </GetStarted>
+          <FunctionFile resid="Taskpane.Url" />
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="TabHome">
+              <Group id="WordTTSGroup">
+                <Label resid="Group.Label" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16x16" />
+                  <bt:Image size="32" resid="Icon.32x32" />
+                  <bt:Image size="80" resid="Icon.80x80" />
+                </Icon>
+                <Control xsi:type="Button" id="OpenTaskpaneButton">
+                  <Label resid="OpenTaskpaneButton.Label" />
+                  <Supertip>
+                    <Title resid="OpenTaskpaneButton.Label" />
+                    <Description resid="OpenTaskpaneButton.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>WordTTSReaderPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.AutoStartUrl" />
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16x16" DefaultValue="https://res.cdn.office.net/files/fabric-cdn-prod_20221201.001/assets/item-types/16/docx.svg" />
+        <bt:Image id="Icon.32x32" DefaultValue="https://res.cdn.office.net/files/fabric-cdn-prod_20221201.001/assets/item-types/32/docx.svg" />
+        <bt:Image id="Icon.80x80" DefaultValue="https://res.cdn.office.net/files/fabric-cdn-prod_20221201.001/assets/item-types/48/docx.svg" />
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://learn.microsoft.com/office/dev/add-ins/" />
+        <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3000/taskpane.html" />
+        <bt:Url id="Taskpane.AutoStartUrl" DefaultValue="https://localhost:3000/taskpane.html?autostart=1" />
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="GetStarted.Title" DefaultValue="Word TTS Reader loaded" />
+        <bt:String id="Group.Label" DefaultValue="Word TTS" />
+        <bt:String id="OpenTaskpaneButton.Label" DefaultValue="Read selection" />
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="GetStarted.Description" DefaultValue="Use the taskpane to read selected text with external TTS API." />
+        <bt:String id="OpenTaskpaneButton.Tooltip" DefaultValue="Open TTS panel and start reading current selection." />
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>

@@ -1,0 +1,9 @@
+{
+  "TTS_API_BASE_URL": "https://example.com/api/tts",
+  "DEFAULT_VOICE": "default",
+  "DEFAULT_RATE": 1,
+  "AUDIO_FORMAT": "mp3",
+  "REQUEST_TIMEOUT_MS": 30000,
+  "MAX_RETRIES": 2,
+  "MAX_CHUNK_LENGTH": 320
+}

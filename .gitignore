@@ -1,0 +1,38 @@
+############################
+# Node / TypeScript
+############################
+node_modules/
+dist/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+############################
+# Environment / secrets
+############################
+.env
+.env.*
+
+############################
+# Office Add-in dev certs
+############################
+*.pem
+*.pfx
+*.cer
+
+############################
+# OS / editor
+############################
+.DS_Store
+Thumbs.db
+desktop.ini
+
+.vscode/
+.idea/
+
+############################
+# Misc
+############################
+.cache/
