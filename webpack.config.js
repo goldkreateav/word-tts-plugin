@@ -1,8 +1,12 @@
 const path = require("path");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const webpack = require("webpack");
+const dotenv = require("dotenv");
 
 module.exports = async () => {
+  dotenv.config();
+
   const protocol = (process.env.WORD_TTS_PROTOCOL || "http").toLowerCase();
   const useHttps = protocol !== "http";
 
@@ -46,6 +50,10 @@ module.exports = async () => {
       ]
     },
     plugins: [
+      new webpack.DefinePlugin({
+        __DEBUG__: JSON.stringify(process.env.DEBUG === "1" || process.env.DEBUG === "true"),
+        __DEFAULT_TTS_API_BASE_URL__: JSON.stringify(process.env.TTS_API_BASE_URL || "")
+      }),
       new HtmlWebpackPlugin({
         filename: "taskpane.html",
         template: "./src/taskpane/taskpane.html",

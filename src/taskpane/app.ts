@@ -2,7 +2,7 @@ import { PlaybackQueue } from "../audio/playbackQueue";
 import { loadSettings, saveSettings } from "../settings/store";
 import { splitIntoChunks } from "../tts/chunker";
 import { TtsClient } from "../tts/ttsClient";
-import { TtsRequest, TtsSettings } from "../types";
+import { RuntimeConfig, TtsRequest, TtsSettings } from "../types";
 import { getSelectedText } from "../word/selectionReader";
 import { loadRuntimeConfig } from "./config";
 
@@ -30,6 +30,7 @@ class TaskpaneApp {
   private readonly ui: UiRefs;
   private state: PlaybackState = "idle";
   private settings!: TtsSettings;
+  private runtimeConfig!: RuntimeConfig;
   private playbackQueue: PlaybackQueue | null = null;
   private activeController: AbortController | null = null;
 
@@ -41,13 +42,17 @@ class TaskpaneApp {
   private selectionWordOccurrenceIndex: number[] = [];
   private lastHighlightedWordIndex: number | null = null;
 
+  private highlightQueueRunning = false;
+  private pendingHighlightWordIndex: number | null = null;
+  private lastHighlightRequestMs = 0;
+
   constructor(ui: UiRefs) {
     this.ui = ui;
   }
 
   async init(): Promise<void> {
-    const config = await loadRuntimeConfig();
-    this.settings = await loadSettings(config);
+    this.runtimeConfig = await loadRuntimeConfig();
+    this.settings = await loadSettings(this.runtimeConfig);
     this.fillSettingsForm();
     this.bindEvents();
     this.setStatus("Готово.");
@@ -286,7 +291,7 @@ class TaskpaneApp {
           lastLocalIndex = localIndex;
 
           const globalIndex = globalWordBase + localIndex;
-          void this.highlightWord(globalIndex);
+          this.requestHighlight(globalIndex);
           this.setPreviewCurrentWord(globalIndex);
         });
 
@@ -298,7 +303,7 @@ class TaskpaneApp {
         this.setStatus("Готово.");
       }
     } catch (error) {
-      this.setStatus((error as Error).message);
+      this.reportError(error);
     } finally {
       this.stop();
     }
@@ -340,6 +345,36 @@ class TaskpaneApp {
     this.ui.status.textContent = text;
   }
 
+  private reportError(error: unknown): void {
+    const err = error as Error;
+    if (this.runtimeConfig?.DEBUG) {
+      // eslint-disable-next-line no-console
+      console.error(err);
+      this.setStatus(err?.message || "Ошибка.");
+      return;
+    }
+
+    const msg = (err?.message || "").toLowerCase();
+    if (msg.includes("failed to fetch") || msg.includes("networkerror")) {
+      this.setStatus("Сервер TTS недоступен. Запустите сервер и проверьте URL.");
+      return;
+    }
+    if (msg.includes("timeout")) {
+      this.setStatus("Сервер TTS не отвечает (таймаут).");
+      return;
+    }
+    if (msg.includes("http 401") || msg.includes("http 403")) {
+      this.setStatus("Нет доступа к TTS API. Проверьте API ключ.");
+      return;
+    }
+    if (msg.includes("http 404")) {
+      this.setStatus("Неверный URL TTS API. Проверьте адрес (должен указывать на базу `/v1/`).");
+      return;
+    }
+
+    this.setStatus("Произошла ошибка. Проверьте URL/ключ и попробуйте ещё раз.");
+  }
+
   private setProgress(current: number, total: number): void {
     this.ui.progress.textContent = `Прогресс: ${current}/${total}`;
   }
@@ -349,6 +384,45 @@ class TaskpaneApp {
     this.ui.pauseBtn.disabled = this.state !== "playing";
     this.ui.resumeBtn.disabled = this.state !== "paused";
     this.ui.stopBtn.disabled = this.state === "idle";
+  }
+
+  private requestHighlight(globalWordIndex: number): void {
+    // Office.js calls are relatively slow; avoid queue buildup by always applying only the latest word.
+    const now = Date.now();
+    if (now - this.lastHighlightRequestMs < 110) {
+      // throttling: if updates come too frequently, skip intermediate indices
+      this.pendingHighlightWordIndex = globalWordIndex;
+      if (!this.highlightQueueRunning) {
+        void this.processHighlightQueue();
+      }
+      return;
+    }
+    this.lastHighlightRequestMs = now;
+    this.pendingHighlightWordIndex = globalWordIndex;
+    if (!this.highlightQueueRunning) {
+      void this.processHighlightQueue();
+    }
+  }
+
+  private async processHighlightQueue(): Promise<void> {
+    if (this.highlightQueueRunning) return;
+    this.highlightQueueRunning = true;
+    try {
+      while (this.pendingHighlightWordIndex !== null && this.state === "playing") {
+        const idx = this.pendingHighlightWordIndex;
+        this.pendingHighlightWordIndex = null;
+        try {
+          await this.highlightWord(idx);
+        } catch (e) {
+          if (this.runtimeConfig?.DEBUG) {
+            // eslint-disable-next-line no-console
+            console.error(e);
+          }
+        }
+      }
+    } finally {
+      this.highlightQueueRunning = false;
+    }
   }
 
   private escapeHtml(text: string): string {

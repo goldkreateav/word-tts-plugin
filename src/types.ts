@@ -6,6 +6,7 @@ export interface RuntimeConfig {
   REQUEST_TIMEOUT_MS: number;
   MAX_RETRIES: number;
   MAX_CHUNK_LENGTH: number;
+  DEBUG: boolean;
 }
 
 export interface TtsSettings {
