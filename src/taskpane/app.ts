@@ -140,26 +140,40 @@ class TaskpaneApp {
     }
   }
 
-  private setVoiceOptions(voiceIds: string[]): void {
+  private setVoiceOptions(voices: Array<{ id: string; name?: string }>): void {
     const current = this.settings.voice || "default";
-    const unique = Array.from(new Set(["default", ...voiceIds.filter(Boolean)]));
+    const seen = new Set<string>();
+    const normalized: Array<{ id: string; name: string }> = [];
+
+    const push = (id: string, name?: string) => {
+      const v = (id || "").trim();
+      if (!v) return;
+      if (seen.has(v)) return;
+      seen.add(v);
+      normalized.push({ id: v, name: (name || v).trim() || v });
+    };
+
+    push("default", "По умолчанию");
+    for (const v of voices) {
+      push(v.id, v.name);
+    }
 
     this.ui.voice.innerHTML = "";
-    for (const id of unique) {
+    for (const v of normalized) {
       const opt = document.createElement("option");
-      opt.value = id;
-      opt.textContent = id;
+      opt.value = v.id;
+      opt.textContent = v.name;
       this.ui.voice.appendChild(opt);
     }
 
-    this.ui.voice.value = unique.includes(current) ? current : "default";
+    this.ui.voice.value = normalized.some((v) => v.id === current) ? current : "default";
     this.settings.voice = this.ui.voice.value;
   }
 
   private async refreshVoices(): Promise<void> {
     const voicesUrl = this.voicesUrlFromApiUrl(this.settings.apiUrl);
     if (!voicesUrl) {
-      this.setVoiceOptions([this.settings.voice || "default"]);
+      this.setVoiceOptions([{ id: this.settings.voice || "default" }]);
       return;
     }
 
@@ -170,15 +184,14 @@ class TaskpaneApp {
         }
       });
       if (!resp.ok) {
-        this.setVoiceOptions([this.settings.voice || "default"]);
+        this.setVoiceOptions([{ id: this.settings.voice || "default" }]);
         return;
       }
-      const json = (await resp.json()) as { voices?: Array<{ id: string }> };
-      const ids = (json.voices || []).map((v) => v.id).filter(Boolean);
-      this.setVoiceOptions(ids);
+      const json = (await resp.json()) as { voices?: Array<{ id: string; name?: string }> };
+      this.setVoiceOptions((json.voices || []).filter((v) => !!v?.id));
       await saveSettings(this.settings);
     } catch {
-      this.setVoiceOptions([this.settings.voice || "default"]);
+      this.setVoiceOptions([{ id: this.settings.voice || "default" }]);
     }
   }
 
