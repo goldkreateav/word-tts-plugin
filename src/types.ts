@@ -18,6 +18,7 @@ export interface TtsSettings {
   volume: number;
   audioFormat: string;
   maxChunkLength: number;
+  highlightColor: string;
 }
 
 export interface TextChunk {

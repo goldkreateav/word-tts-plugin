@@ -10,7 +10,8 @@ const defaultSettingsFromConfig = (config: RuntimeConfig): TtsSettings => ({
   pauseMs: 120,
   volume: 1,
   audioFormat: config.AUDIO_FORMAT || "mp3",
-  maxChunkLength: config.MAX_CHUNK_LENGTH || 320
+  maxChunkLength: config.MAX_CHUNK_LENGTH || 320,
+  highlightColor: "#fff200"
 });
 
 const hasOfficeRuntimeStorage = (): boolean =>

@@ -162,5 +162,5 @@ select:focus-visible,
 }
 
 .wordToken.current {
-  background: #fff200;
+  background: var(--highlight-color, #fff200);
 }

@@ -24,6 +24,7 @@ interface UiRefs {
   volume: HTMLInputElement;
   maxChunkLength: HTMLInputElement;
   audioFormat: HTMLInputElement;
+  highlightColor: HTMLInputElement;
 }
 
 class TaskpaneApp {
@@ -82,6 +83,7 @@ class TaskpaneApp {
     this.ui.volume.addEventListener("change", onInput);
     this.ui.maxChunkLength.addEventListener("change", onInput);
     this.ui.audioFormat.addEventListener("change", onInput);
+    this.ui.highlightColor.addEventListener("change", onInput);
   }
 
   private fillSettingsForm(): void {
@@ -96,6 +98,8 @@ class TaskpaneApp {
     this.ui.volume.value = String(this.settings.volume);
     this.ui.maxChunkLength.value = String(this.settings.maxChunkLength);
     this.ui.audioFormat.value = this.settings.audioFormat;
+    this.ui.highlightColor.value = this.settings.highlightColor || "#fff200";
+    this.applyPreviewHighlightColor();
   }
 
   private readSettingsFromForm(): TtsSettings {
@@ -107,7 +111,8 @@ class TaskpaneApp {
       pauseMs: Math.max(0, Number(this.ui.pauseMs.value) || 0),
       volume: Math.min(1, Math.max(0, Number(this.ui.volume.value) || 1)),
       maxChunkLength: Math.max(80, Number(this.ui.maxChunkLength.value) || 320),
-      audioFormat: this.ui.audioFormat.value.trim() || "mp3"
+      audioFormat: this.ui.audioFormat.value.trim() || "mp3",
+      highlightColor: (this.ui.highlightColor.value || "#fff200").trim() || "#fff200"
     };
   }
 
@@ -115,6 +120,7 @@ class TaskpaneApp {
     this.settings = this.readSettingsFromForm();
     await saveSettings(this.settings);
     this.playbackQueue?.setVolume(this.settings.volume);
+    this.applyPreviewHighlightColor();
   }
 
   private async onApiConnectionChanged(): Promise<void> {
@@ -499,6 +505,7 @@ class TaskpaneApp {
     this.ui.textPreview.innerHTML = html;
     this.ui.textPreview.hidden = false;
     this.ui.textPreview.scrollTop = 0;
+    this.applyPreviewHighlightColor();
   }
 
   private clearPreview(): void {
@@ -525,6 +532,11 @@ class TaskpaneApp {
     el?.scrollIntoView({ block: "center" });
 
     this.currentPreviewWordIndex = globalWordIndex;
+  }
+
+  private applyPreviewHighlightColor(): void {
+    const c = (this.settings?.highlightColor || "#fff200").trim() || "#fff200";
+    this.ui.textPreview.style.setProperty("--highlight-color", c);
   }
 
   private async prepareSelectionHighlight(selectedText: string): Promise<void> {
@@ -647,7 +659,7 @@ class TaskpaneApp {
 
       if (nextOcc < res.items.length) {
         const r = res.items[nextOcc];
-        r.font.highlightColor = "#fff200";
+        r.font.highlightColor = (this.settings.highlightColor || "#fff200").trim() || "#fff200";
 
         // Avoid view "jumps": scrolling via selection is expensive/flickery.
         // Scroll only occasionally to keep the current word in view.
@@ -687,7 +699,8 @@ export function createTaskpaneApp(): TaskpaneApp {
     pauseMs: get<HTMLInputElement>("pauseMs"),
     volume: get<HTMLInputElement>("volume"),
     maxChunkLength: get<HTMLInputElement>("maxChunkLength"),
-    audioFormat: get<HTMLInputElement>("audioFormat")
+    audioFormat: get<HTMLInputElement>("audioFormat"),
+    highlightColor: get<HTMLInputElement>("highlightColor")
   };
 
   return new TaskpaneApp(ui);
