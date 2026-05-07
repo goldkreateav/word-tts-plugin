@@ -396,6 +396,10 @@ class TaskpaneApp {
     }
 
     const msg = (err?.message || "").toLowerCase();
+    if (msg.includes("текст не выделен") || msg.includes("выделите фрагмент")) {
+      this.setStatus("Текст не выделен. Выделите фрагмент в Word и попробуйте ещё раз.");
+      return;
+    }
     if (msg.includes("failed to fetch") || msg.includes("networkerror")) {
       this.setStatus("Сервер TTS недоступен. Запустите сервер и проверьте URL.");
       return;
