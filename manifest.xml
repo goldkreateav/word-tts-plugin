@@ -15,13 +15,13 @@
   <HighResolutionIconUrl DefaultValue="https://res.cdn.office.net/files/fabric-cdn-prod_20221201.001/assets/item-types/64/docx.svg" />
   <SupportUrl DefaultValue="https://example.com/support" />
   <AppDomains>
-    <AppDomain>https://localhost:3000</AppDomain>
+    <AppDomain>http://localhost:3000</AppDomain>
   </AppDomains>
   <Hosts>
     <Host Name="Document" />
   </Hosts>
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://localhost:3000/taskpane.html" />
+    <SourceLocation DefaultValue="http://localhost:3000/taskpane.html" />
   </DefaultSettings>
   <Permissions>ReadDocument</Permissions>
 
@@ -74,8 +74,8 @@
       </bt:Images>
       <bt:Urls>
         <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://learn.microsoft.com/office/dev/add-ins/" />
-        <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3000/taskpane.html" />
-        <bt:Url id="Taskpane.AutoStartUrl" DefaultValue="https://localhost:3000/taskpane.html?autostart=1" />
+        <bt:Url id="Taskpane.Url" DefaultValue="http://localhost:3000/taskpane.html" />
+        <bt:Url id="Taskpane.AutoStartUrl" DefaultValue="http://localhost:3000/taskpane.html?autostart=1" />
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GetStarted.Title" DefaultValue="Word TTS Reader loaded" />

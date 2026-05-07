@@ -3,7 +3,7 @@ const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = async () => {
-  const protocol = (process.env.WORD_TTS_PROTOCOL || "https").toLowerCase();
+  const protocol = (process.env.WORD_TTS_PROTOCOL || "http").toLowerCase();
   const useHttps = protocol !== "http";
 
   let httpsServerOptions;
