@@ -3,16 +3,21 @@ const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = async () => {
+  const protocol = (process.env.WORD_TTS_PROTOCOL || "https").toLowerCase();
+  const useHttps = protocol !== "http";
+
   let httpsServerOptions;
-  try {
-    // Use a dev certificate that Office can trust on Windows.
-    // Requires: `npm run certs:install` (run once, may prompt for admin).
-    // eslint-disable-next-line global-require
-    const devCerts = require("office-addin-dev-certs");
-    httpsServerOptions = await devCerts.getHttpsServerOptions();
-  } catch (e) {
-    // Fallback to webpack-dev-server's self-signed cert (Word may reject it).
-    httpsServerOptions = undefined;
+  if (useHttps) {
+    try {
+      // Use a dev certificate that Office can trust on Windows.
+      // Requires: `npm run certs:install` (run once, may prompt for admin).
+      // eslint-disable-next-line global-require
+      const devCerts = require("office-addin-dev-certs");
+      httpsServerOptions = await devCerts.getHttpsServerOptions();
+    } catch (e) {
+      // Fallback to webpack-dev-server's self-signed cert (Word may reject it).
+      httpsServerOptions = undefined;
+    }
   }
 
   return {
@@ -66,9 +71,11 @@ module.exports = async () => {
       host: "0.0.0.0",
       allowedHosts: "all",
       port: 3000,
-      server: httpsServerOptions
-        ? { type: "https", options: httpsServerOptions }
-        : "https",
+      server: useHttps
+        ? httpsServerOptions
+          ? { type: "https", options: httpsServerOptions }
+          : "https"
+        : "http",
       headers: {
         "Access-Control-Allow-Origin": "*"
       }
