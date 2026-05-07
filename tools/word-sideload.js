@@ -132,11 +132,16 @@ function launchWordWithDocx(docxPath) {
   const winword = getWinwordExePath();
   if (winword && fs.existsSync(winword)) {
     logLine(`Found WINWORD.EXE at: ${winword}`);
-    // Use start to detach; call WinWord directly for reliability.
-    spawnSync("cmd.exe", ["/c", "start", "", `"${winword}"`, `"${docxPath}"`], {
+    // Call WINWORD.EXE directly to avoid cmd.exe quoting issues with spaces.
+    const res = spawnSync(winword, [docxPath], {
       stdio: "inherit",
       windowsHide: false
     });
+    if (res.error) {
+      logLine(`Failed to launch WINWORD.EXE directly: ${res.error.message}`);
+      logLine("Falling back to opening the .docx via file association.");
+      launchFile(docxPath);
+    }
     return true;
   }
 
