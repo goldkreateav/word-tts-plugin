@@ -11,8 +11,8 @@
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Word TTS Reader" />
   <Description DefaultValue="Read selected text via external TTS API." />
-  <IconUrl DefaultValue="https://res.cdn.office.net/files/fabric-cdn-prod_20221201.001/assets/item-types/32/docx.svg" />
-  <HighResolutionIconUrl DefaultValue="https://res.cdn.office.net/files/fabric-cdn-prod_20221201.001/assets/item-types/64/docx.svg" />
+  <IconUrl DefaultValue="https://res.cdn.office.net/files/fabric-cdn-prod_20221201.001/assets/item-types/32/docx.png" />
+  <HighResolutionIconUrl DefaultValue="https://res.cdn.office.net/files/fabric-cdn-prod_20221201.001/assets/item-types/64/docx.png" />
   <SupportUrl DefaultValue="https://example.com/support" />
   <AppDomains>
     <AppDomain>http://localhost:3000</AppDomain>
@@ -68,9 +68,9 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16x16" DefaultValue="https://res.cdn.office.net/files/fabric-cdn-prod_20221201.001/assets/item-types/16/docx.svg" />
-        <bt:Image id="Icon.32x32" DefaultValue="https://res.cdn.office.net/files/fabric-cdn-prod_20221201.001/assets/item-types/32/docx.svg" />
-        <bt:Image id="Icon.80x80" DefaultValue="https://res.cdn.office.net/files/fabric-cdn-prod_20221201.001/assets/item-types/48/docx.svg" />
+        <bt:Image id="Icon.16x16" DefaultValue="https://res.cdn.office.net/files/fabric-cdn-prod_20221201.001/assets/item-types/16/docx.png" />
+        <bt:Image id="Icon.32x32" DefaultValue="https://res.cdn.office.net/files/fabric-cdn-prod_20221201.001/assets/item-types/32/docx.png" />
+        <bt:Image id="Icon.80x80" DefaultValue="https://res.cdn.office.net/files/fabric-cdn-prod_20221201.001/assets/item-types/48/docx.png" />
       </bt:Images>
       <bt:Urls>
         <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://learn.microsoft.com/office/dev/add-ins/" />
