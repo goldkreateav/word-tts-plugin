@@ -298,10 +298,10 @@ class TaskpaneApp {
           let localIndex = 0;
           if (alignmentWords.length) {
             // Find the word whose [startSec, endSec) contains currentTimeSec.
-            // Fallback to last word if we're past the end.
+            // If currentTimeSec is between words (gap), keep the previous word.
             let lo = 0;
             let hi = alignmentWords.length - 1;
-            let found = alignmentWords.length - 1;
+            let found = -1;
             while (lo <= hi) {
               const mid = (lo + hi) >> 1;
               const w = alignmentWords[mid];
@@ -314,7 +314,9 @@ class TaskpaneApp {
                 break;
               }
             }
-            localIndex = Math.min(chunkWordCount - 1, Math.max(0, found));
+            // If not inside any word range, `hi` ends up as the index of the previous word.
+            const best = found >= 0 ? found : hi;
+            localIndex = Math.min(chunkWordCount - 1, Math.max(0, best));
           } else {
             if (!Number.isFinite(durationSec) || durationSec <= 0) return;
             const p = Math.min(0.999, Math.max(0, currentTimeSec / durationSec));
