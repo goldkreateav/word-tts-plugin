@@ -17,7 +17,7 @@ interface UiRefs {
   progress: HTMLElement;
   apiUrl: HTMLInputElement;
   apiKey: HTMLInputElement;
-  voice: HTMLInputElement;
+  voice: HTMLSelectElement;
   rate: HTMLInputElement;
   pauseMs: HTMLInputElement;
   volume: HTMLInputElement;
@@ -42,6 +42,7 @@ class TaskpaneApp {
     this.fillSettingsForm();
     this.bindEvents();
     this.setStatus("Ready.");
+    await this.refreshVoices();
 
     const autoStart = new URLSearchParams(window.location.search).get("autostart");
     if (autoStart === "1") {
@@ -56,9 +57,10 @@ class TaskpaneApp {
     this.ui.stopBtn.addEventListener("click", () => this.stop());
 
     const onInput = () => void this.persistSettings();
-    this.ui.apiUrl.addEventListener("change", onInput);
-    this.ui.apiKey.addEventListener("change", onInput);
-    this.ui.voice.addEventListener("change", onInput);
+
+    this.ui.apiUrl.addEventListener("change", () => void this.onApiConnectionChanged());
+    this.ui.apiKey.addEventListener("change", () => void this.onApiConnectionChanged());
+    this.ui.voice.addEventListener("change", () => void this.persistSettings());
     this.ui.rate.addEventListener("change", onInput);
     this.ui.pauseMs.addEventListener("change", onInput);
     this.ui.volume.addEventListener("change", onInput);
@@ -69,7 +71,10 @@ class TaskpaneApp {
   private fillSettingsForm(): void {
     this.ui.apiUrl.value = this.settings.apiUrl;
     this.ui.apiKey.value = this.settings.apiKey;
-    this.ui.voice.value = this.settings.voice;
+    // options loaded async; keep current value until refreshVoices() runs
+    if (this.ui.voice.value !== this.settings.voice) {
+      this.ui.voice.value = this.settings.voice;
+    }
     this.ui.rate.value = String(this.settings.rate);
     this.ui.pauseMs.value = String(this.settings.pauseMs);
     this.ui.volume.value = String(this.settings.volume);
@@ -94,6 +99,65 @@ class TaskpaneApp {
     this.settings = this.readSettingsFromForm();
     await saveSettings(this.settings);
     this.playbackQueue?.setVolume(this.settings.volume);
+  }
+
+  private async onApiConnectionChanged(): Promise<void> {
+    await this.persistSettings();
+    await this.refreshVoices();
+  }
+
+  private voicesUrlFromApiUrl(apiUrl: string): string | null {
+    try {
+      const u = new URL(apiUrl);
+      u.pathname = "/v1/voices";
+      u.search = "";
+      u.hash = "";
+      return u.toString();
+    } catch {
+      return null;
+    }
+  }
+
+  private setVoiceOptions(voiceIds: string[]): void {
+    const current = this.settings.voice || "default";
+    const unique = Array.from(new Set(["default", ...voiceIds.filter(Boolean)]));
+
+    this.ui.voice.innerHTML = "";
+    for (const id of unique) {
+      const opt = document.createElement("option");
+      opt.value = id;
+      opt.textContent = id;
+      this.ui.voice.appendChild(opt);
+    }
+
+    this.ui.voice.value = unique.includes(current) ? current : "default";
+    this.settings.voice = this.ui.voice.value;
+  }
+
+  private async refreshVoices(): Promise<void> {
+    const voicesUrl = this.voicesUrlFromApiUrl(this.settings.apiUrl);
+    if (!voicesUrl) {
+      this.setVoiceOptions([this.settings.voice || "default"]);
+      return;
+    }
+
+    try {
+      const resp = await fetch(voicesUrl, {
+        headers: {
+          ...(this.settings.apiKey ? { Authorization: `Bearer ${this.settings.apiKey}` } : {})
+        }
+      });
+      if (!resp.ok) {
+        this.setVoiceOptions([this.settings.voice || "default"]);
+        return;
+      }
+      const json = (await resp.json()) as { voices?: Array<{ id: string }> };
+      const ids = (json.voices || []).map((v) => v.id).filter(Boolean);
+      this.setVoiceOptions(ids);
+      await saveSettings(this.settings);
+    } catch {
+      this.setVoiceOptions([this.settings.voice || "default"]);
+    }
   }
 
   private async startReading(): Promise<void> {
@@ -235,7 +299,7 @@ export function createTaskpaneApp(): TaskpaneApp {
     progress: get<HTMLElement>("progress"),
     apiUrl: get<HTMLInputElement>("apiUrl"),
     apiKey: get<HTMLInputElement>("apiKey"),
-    voice: get<HTMLInputElement>("voice"),
+    voice: get<HTMLSelectElement>("voice"),
     rate: get<HTMLInputElement>("rate"),
     pauseMs: get<HTMLInputElement>("pauseMs"),
     volume: get<HTMLInputElement>("volume"),

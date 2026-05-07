@@ -16,8 +16,8 @@
         <button id="stopBtn" disabled>Stop</button>
       </div>
 
-      <section class="panel">
-        <h2>Settings</h2>
+      <details class="panel" id="settingsPanel">
+        <summary class="panelSummary">Settings</summary>
         <label>
           TTS API URL
           <input id="apiUrl" type="url" placeholder="https://example.com/api/tts" />
@@ -28,7 +28,7 @@
         </label>
         <label>
           Voice
-          <input id="voice" type="text" placeholder="default" />
+          <select id="voice"></select>
         </label>
         <label>
           Speed (0.5-2.0)
@@ -50,7 +50,7 @@
           Audio format
           <input id="audioFormat" type="text" placeholder="mp3" />
         </label>
-      </section>
+      </details>
 
       <p id="status" class="status">Ready.</p>
       <p id="progress" class="progress"></p>

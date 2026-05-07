@@ -43,12 +43,26 @@ button:disabled {
 }
 
 .panel {
-  display: grid;
-  gap: 8px;
   border: 1px solid #d7dde3;
   border-radius: 8px;
   background: #fff;
   padding: 10px;
+}
+
+.panel[open] {
+  display: grid;
+  gap: 8px;
+}
+
+.panelSummary {
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.panelSummary::-webkit-details-marker {
+  display: none;
 }
 
 label {
@@ -57,11 +71,13 @@ label {
   font-size: 12px;
 }
 
-input {
+input,
+select {
   border: 1px solid #c9d1d9;
   border-radius: 6px;
   padding: 7px 8px;
   font-size: 13px;
+  background: #fff;
 }
 
 .status,
