@@ -6,7 +6,7 @@
   "scripts": {
     "build": "webpack --mode production",
     "build:dev": "webpack --mode development",
-    "start": "webpack serve --mode development --https --port 3000 --host localhost",
+    "start": "webpack serve --mode development --port 3000 --host localhost",
     "lint": "eslint . --ext .ts"
   },
   "dependencies": {
