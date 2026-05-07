@@ -6,7 +6,8 @@
   "scripts": {
     "build": "webpack --mode production",
     "build:dev": "webpack --mode development",
-    "start": "webpack serve --mode development --port 3000 --host localhost",
+    "start": "webpack serve --mode development --port 3000",
+    "certs:install": "office-addin-dev-certs install",
     "lint": "eslint . --ext .ts"
   },
   "dependencies": {
@@ -20,6 +21,7 @@
     "css-loader": "^7.1.2",
     "eslint": "^9.26.0",
     "html-webpack-plugin": "^5.6.3",
+    "office-addin-dev-certs": "^1.13.0",
     "style-loader": "^4.0.0",
     "ts-loader": "^9.5.2",
     "typescript": "^5.8.3",
