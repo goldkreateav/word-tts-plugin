@@ -46,6 +46,7 @@ class TaskpaneApp {
   private highlightQueueRunning = false;
   private pendingHighlightWordIndex: number | null = null;
   private lastHighlightRequestMs = 0;
+  private lastWordScrollMs = 0;
 
   constructor(ui: UiRefs) {
     this.ui = ui;
@@ -624,23 +625,37 @@ class TaskpaneApp {
 
       const range = cc.getRange();
 
+      const prevRes =
+        prevWord && prevOcc !== null
+          ? range.search(prevWord, { matchCase: false, matchWholeWord: true })
+          : null;
+      prevRes?.load("items");
+
       if (prevWord && prevOcc !== null) {
-        const prevRes = range.search(prevWord, { matchCase: false, matchWholeWord: true });
-        prevRes.load("items");
-        await context.sync();
-        if (prevOcc < prevRes.items.length) {
-          prevRes.items[prevOcc].font.highlightColor = "";
-        }
+        // loaded above
       }
 
       const res = range.search(nextWord, { matchCase: false, matchWholeWord: true });
       res.load("items");
       await context.sync();
+
+      if (prevRes && prevOcc !== null && prevOcc < prevRes.items.length) {
+        prevRes.items[prevOcc].font.highlightColor = "";
+      }
+
       if (nextOcc < res.items.length) {
         const r = res.items[nextOcc];
         r.font.highlightColor = "#fff200";
-        r.select();
+
+        // Avoid view "jumps": scrolling via selection is expensive/flickery.
+        // Scroll only occasionally to keep the current word in view.
+        const now = Date.now();
+        if (now - this.lastWordScrollMs > 900) {
+          r.select("Start");
+          this.lastWordScrollMs = now;
+        }
       }
+
       await context.sync();
     });
   }
