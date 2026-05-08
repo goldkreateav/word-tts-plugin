@@ -1,0 +1,25 @@
+services:
+  tts-api:
+    build:
+      context: ../TTS API
+      dockerfile: Dockerfile
+    ports:
+      - "5529:5529"
+    environment:
+      # Optional: set API key by creating .env near this compose file and uncommenting:
+      # TTS_API_KEY: ${TTS_API_KEY}
+      # (API reads `tts_api_key` from `.env` by default; env vars also work via pydantic-settings.)
+      - PYTHONUNBUFFERED=1
+
+  word-tts-plugin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - WORD_TTS_PROTOCOL=http
+      # This is used as the default value in plugin UI (config/default.json is the fallback).
+      - TTS_API_BASE_URL=http://localhost:5529/v1/
+    depends_on:
+      - tts-api
