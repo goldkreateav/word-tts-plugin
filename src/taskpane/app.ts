@@ -16,14 +16,10 @@ interface UiRefs {
   status: HTMLElement;
   progress: HTMLElement;
   textPreview: HTMLElement;
-  apiUrl: HTMLInputElement;
-  apiKey: HTMLInputElement;
   voice: HTMLSelectElement;
   rate: HTMLInputElement;
   pauseMs: HTMLInputElement;
   volume: HTMLInputElement;
-  maxChunkLength: HTMLInputElement;
-  audioFormat: HTMLInputElement;
   highlightColor: HTMLInputElement;
 }
 
@@ -75,29 +71,20 @@ class TaskpaneApp {
 
     const onInput = () => void this.persistSettings();
 
-    this.ui.apiUrl.addEventListener("change", () => void this.onApiConnectionChanged());
-    this.ui.apiKey.addEventListener("change", () => void this.onApiConnectionChanged());
     this.ui.voice.addEventListener("change", () => void this.persistSettings());
     this.ui.rate.addEventListener("change", onInput);
     this.ui.pauseMs.addEventListener("change", onInput);
     this.ui.volume.addEventListener("change", onInput);
-    this.ui.maxChunkLength.addEventListener("change", onInput);
-    this.ui.audioFormat.addEventListener("change", onInput);
     this.ui.highlightColor.addEventListener("change", onInput);
   }
 
   private fillSettingsForm(): void {
-    this.ui.apiUrl.value = this.settings.apiUrl;
-    this.ui.apiKey.value = this.settings.apiKey;
-    // options loaded async; keep current value until refreshVoices() runs
     if (this.ui.voice.value !== this.settings.voice) {
       this.ui.voice.value = this.settings.voice;
     }
     this.ui.rate.value = String(this.settings.rate);
     this.ui.pauseMs.value = String(this.settings.pauseMs);
     this.ui.volume.value = String(this.settings.volume);
-    this.ui.maxChunkLength.value = String(this.settings.maxChunkLength);
-    this.ui.audioFormat.value = this.settings.audioFormat;
     this.ui.highlightColor.value = this.settings.highlightColor || "#fff200";
     this.applyPreviewHighlightColor();
   }
@@ -107,14 +94,11 @@ class TaskpaneApp {
       Math.min(max, Math.max(min, v));
 
     return {
-      apiUrl: this.normalizeApiBaseUrl(this.ui.apiUrl.value),
-      apiKey: this.ui.apiKey.value.trim(),
+      ...this.settings,
       voice: this.ui.voice.value.trim() || "default",
       rate: clamp(Number(this.ui.rate.value) || 1, 0.75, 1.5),
       pauseMs: Math.max(0, Number(this.ui.pauseMs.value) || 0),
       volume: Math.min(1, Math.max(0, Number(this.ui.volume.value) || 1)),
-      maxChunkLength: Math.max(80, Number(this.ui.maxChunkLength.value) || 320),
-      audioFormat: this.ui.audioFormat.value.trim() || "mp3",
       highlightColor: (this.ui.highlightColor.value || "#fff200").trim() || "#fff200"
     };
   }
@@ -124,11 +108,6 @@ class TaskpaneApp {
     await saveSettings(this.settings);
     this.playbackQueue?.setVolume(this.settings.volume);
     this.applyPreviewHighlightColor();
-  }
-
-  private async onApiConnectionChanged(): Promise<void> {
-    await this.persistSettings();
-    await this.refreshVoices();
   }
 
   private normalizeApiBaseUrl(input: string): string {
@@ -227,7 +206,7 @@ class TaskpaneApp {
 
     await this.persistSettings();
     if (!this.settings.apiUrl) {
-      this.setStatus("Укажите URL TTS API перед запуском.");
+      this.setStatus("Сервер озвучивания не настроен. Обратитесь к администратору.");
       return;
     }
 
@@ -404,23 +383,23 @@ class TaskpaneApp {
       return;
     }
     if (msg.includes("failed to fetch") || msg.includes("networkerror")) {
-      this.setStatus("Сервер TTS недоступен. Запустите сервер и проверьте URL.");
+      this.setStatus("Сервер озвучивания недоступен. Попробуйте позже.");
       return;
     }
     if (msg.includes("timeout")) {
-      this.setStatus("Сервер TTS не отвечает (таймаут).");
+      this.setStatus("Сервер озвучивания не отвечает. Попробуйте позже.");
       return;
     }
     if (msg.includes("http 401") || msg.includes("http 403")) {
-      this.setStatus("Нет доступа к TTS API. Проверьте API ключ.");
+      this.setStatus("Нет доступа к серверу озвучивания. Обратитесь к администратору.");
       return;
     }
     if (msg.includes("http 404")) {
-      this.setStatus("Неверный URL TTS API. Проверьте адрес (должен указывать на базу `/v1/`).");
+      this.setStatus("Сервер озвучивания настроен неверно. Обратитесь к администратору.");
       return;
     }
 
-    this.setStatus("Произошла ошибка. Проверьте URL/ключ и попробуйте ещё раз.");
+    this.setStatus("Произошла ошибка. Попробуйте ещё раз.");
   }
 
   private setProgress(current: number, total: number): void {
@@ -699,14 +678,10 @@ export function createTaskpaneApp(): TaskpaneApp {
     status: get<HTMLElement>("status"),
     progress: get<HTMLElement>("progress"),
     textPreview: get<HTMLElement>("textPreview"),
-    apiUrl: get<HTMLInputElement>("apiUrl"),
-    apiKey: get<HTMLInputElement>("apiKey"),
     voice: get<HTMLSelectElement>("voice"),
     rate: get<HTMLInputElement>("rate"),
     pauseMs: get<HTMLInputElement>("pauseMs"),
     volume: get<HTMLInputElement>("volume"),
-    maxChunkLength: get<HTMLInputElement>("maxChunkLength"),
-    audioFormat: get<HTMLInputElement>("audioFormat"),
     highlightColor: get<HTMLInputElement>("highlightColor")
   };
 

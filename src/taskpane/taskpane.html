@@ -19,14 +19,6 @@
       <details class="panel" id="settingsPanel">
         <summary class="panelSummary">Настройки</summary>
         <label>
-          URL TTS API (база `/v1/`)
-          <input id="apiUrl" type="url" placeholder="http://localhost:8000/v1/" />
-        </label>
-        <label>
-          API ключ (необязательно)
-          <input id="apiKey" type="password" placeholder="Bearer token" />
-        </label>
-        <label>
           Голос
           <select id="voice"></select>
         </label>
@@ -41,14 +33,6 @@
         <label>
           Громкость (0–1)
           <input id="volume" type="number" min="0" max="1" step="0.05" />
-        </label>
-        <label>
-          Максимальная длина фрагмента
-          <input id="maxChunkLength" type="number" min="80" max="1200" step="10" />
-        </label>
-        <label>
-          Формат аудио
-          <input id="audioFormat" type="text" placeholder="mp3 / wav / ogg" />
         </label>
         <label>
           Цвет подсветки
