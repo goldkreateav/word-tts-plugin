@@ -1,27 +1,65 @@
+const fs = require("fs");
 const path = require("path");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const webpack = require("webpack");
 const dotenv = require("dotenv");
 
-module.exports = async () => {
-  dotenv.config();
+const isDockerRuntime = () => process.env.DOCKER === "1" || fs.existsSync("/.dockerenv");
 
-  const protocol = (process.env.WORD_TTS_PROTOCOL || "http").toLowerCase();
-  const useHttps = protocol !== "http";
-
-  let httpsServerOptions;
-  if (useHttps) {
-    try {
-      // Use a dev certificate that Office can trust on Windows.
-      // Requires: `npm run certs:install` (run once, may prompt for admin).
-      // eslint-disable-next-line global-require
-      const devCerts = require("office-addin-dev-certs");
-      httpsServerOptions = await devCerts.getHttpsServerOptions();
-    } catch (e) {
-      // Fallback to webpack-dev-server's self-signed cert (Word may reject it).
-      httpsServerOptions = undefined;
+const loadHttpsServerOptions = async (inDocker) => {
+  const certDir = (process.env.OFFICE_ADDIN_DEV_CERTS_DIR || "").trim();
+  if (certDir) {
+    const keyPath = path.join(certDir, "localhost.key");
+    const certPath = path.join(certDir, "localhost.crt");
+    if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+      return {
+        key: fs.readFileSync(keyPath),
+        cert: fs.readFileSync(certPath)
+      };
     }
+    if (inDocker) {
+      // eslint-disable-next-line no-console
+      console.error(
+        `[word-tts] HTTPS: no localhost.key/localhost.crt in ${certDir}. ` +
+          "On the host run: npm run certs:install"
+      );
+      return undefined;
+    }
+  }
+
+  if (inDocker) {
+    // eslint-disable-next-line no-console
+    console.error(
+      "[word-tts] HTTPS in Docker requires mounting dev certs, e.g. " +
+        "~/.office-addin-dev-certs:/certs and OFFICE_ADDIN_DEV_CERTS_DIR=/certs"
+    );
+    return undefined;
+  }
+
+  try {
+    // eslint-disable-next-line global-require
+    const devCerts = require("office-addin-dev-certs");
+    return await devCerts.getHttpsServerOptions();
+  } catch {
+    return undefined;
+  }
+};
+
+module.exports = async () => {
+  const inDocker = isDockerRuntime();
+  dotenv.config({ quiet: inDocker });
+
+  const protocol = (process.env.WORD_TTS_PROTOCOL || "http").trim().toLowerCase();
+  const useHttps = protocol === "https";
+
+  const httpsServerOptions = useHttps ? await loadHttpsServerOptions(inDocker) : undefined;
+  if (useHttps && !httpsServerOptions) {
+    throw new Error(
+      inDocker
+        ? "HTTPS dev server in Docker needs host certs mounted (see docker-compose.yml)."
+        : "HTTPS dev server needs dev certs. Run: npm run certs:install"
+    );
   }
 
   return {
@@ -86,10 +124,22 @@ module.exports = async () => {
         }
       ],
       hot: false,
-      liveReload: true,
+      liveReload: !inDocker,
       host: "0.0.0.0",
       allowedHosts: "all",
       port: 3000,
+      ...(inDocker
+        ? {
+            client: {
+              webSocketURL: {
+                protocol: useHttps ? "wss" : "ws",
+                hostname: "localhost",
+                port: 3000,
+                pathname: "/ws"
+              }
+            }
+          }
+        : {}),
       server: useHttps
         ? httpsServerOptions
           ? { type: "https", options: httpsServerOptions }

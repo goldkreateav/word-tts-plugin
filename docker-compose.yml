@@ -18,8 +18,12 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - WORD_TTS_PROTOCOL=http
-      # This is used as the default value in plugin UI (config/default.json is the fallback).
-      - TTS_API_BASE_URL=http://localhost:5529/v1/
+      # Match how you open the app in the browser (https://localhost:3000/...).
+      - WORD_TTS_PROTOCOL=${WORD_TTS_PROTOCOL:-https}
+      - OFFICE_ADDIN_DEV_CERTS_DIR=/certs
+      - TTS_API_BASE_URL=${TTS_API_BASE_URL:-https://localhost:5529/v1/}
+    volumes:
+      # Same certs as `npm run start` on the host (run `npm run certs:install` once).
+      - ${HOME}/.office-addin-dev-certs:/certs:ro
     depends_on:
       - tts-api

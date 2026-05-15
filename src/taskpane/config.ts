@@ -18,10 +18,16 @@ export async function loadRuntimeConfig(): Promise<RuntimeConfig> {
       return fallback;
     }
     const parsed = (await response.json()) as Partial<RuntimeConfig>;
-    return {
+    const merged: RuntimeConfig = {
       ...fallback,
       ...parsed
     };
+    const envApi =
+      typeof __DEFAULT_TTS_API_BASE_URL__ === "string" ? __DEFAULT_TTS_API_BASE_URL__.trim() : "";
+    if (envApi) {
+      merged.TTS_API_BASE_URL = envApi;
+    }
+    return merged;
   } catch {
     return fallback;
   }
