@@ -125,21 +125,12 @@ module.exports = async () => {
       ],
       hot: false,
       liveReload: !inDocker,
+      // In Docker, do not inject the dev-server client: it was hardcoded to
+      // wss://localhost:3000 and breaks when the page is opened by server IP.
+      ...(inDocker ? { client: false } : {}),
       host: "0.0.0.0",
       allowedHosts: "all",
       port: 3000,
-      ...(inDocker
-        ? {
-            client: {
-              webSocketURL: {
-                protocol: useHttps ? "wss" : "ws",
-                hostname: "localhost",
-                port: 3000,
-                pathname: "/ws"
-              }
-            }
-          }
-        : {}),
       server: useHttps
         ? httpsServerOptions
           ? { type: "https", options: httpsServerOptions }
